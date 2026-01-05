@@ -17,6 +17,8 @@ EXTRA_TARGETS = EBOOT.PBP
 PSP_EBOOT_TITLE = Key[s]Tester
 PSP_EBOOT_ICON = inc_lib/ICON0.PNG
 
+ENCRYPT = 1
+
 BUILD_PRX = 1
 
 PSPSDK=$(shell psp-config --pspsdk-path)

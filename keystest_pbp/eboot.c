@@ -7,7 +7,7 @@
 
 #include "libpspexploit.h"
 
-PSP_MODULE_INFO("KeyTester_Yoti_and_Krazynez", 0, 4, 3);
+PSP_MODULE_INFO("KeyTester_Yoti_and_Krazynez", 0, 5, 1);
 PSP_MAIN_THREAD_ATTR(0);
 PSP_HEAP_SIZE_KB(20480);
 
@@ -54,25 +54,21 @@ void pspDebugScreenPrintfCenter(int y, const char*text)
 
 void ExitTimerEx(void)
 {
-	int i = 0;
 	pspDebugScreenSetTextColor(COLOR_BLACK);
 	pspDebugScreenSetBackColor(COLOR_WHITE);
-	for (i = 5; i > 0; i--)
+	if (lang == 8)
 	{
-		if (lang == 8)
-		{
-			printfc(15, "                               ");
-			printfc(16, " Завершено, выход через 5 сек. ");
-			printfc(17, "                               ");
-		}
-		else
-		{
-			printfc(15, "                                 ");
-			printfc(16, " All done, autoexit after 5 sec. ");
-			printfc(17, "                                 ");
-		}
-		sceKernelDelayThread(1*1000*1000);
+		printfc(15, "                               ");
+		printfc(16, " Завершено, выход через 5 сек. ");
+		printfc(17, "                               ");
 	}
+	else
+	{
+		printfc(15, "                                 ");
+		printfc(16, " All done, autoexit after 5 sec. ");
+		printfc(17, "                                 ");
+	}
+	sceKernelDelayThread(5*1000*1000);
 	sceKernelExitGame();
 }
 
@@ -374,7 +370,7 @@ void PrintScreen_Pad(SceCtrlData Key)
 	pspDebugScreenSetBackColor(COLOR_BLACK);
 
 	int dead = 16; // 256/16
-	char*text="";
+	char text[8] = "";
 	int x = Key.Lx;
 	int y = Key.Ly;
 	int x_coord = 0;
@@ -429,17 +425,23 @@ int prxCtrlReadBufferPositive(SceCtrlData*pad_data, int count)
 int kthread() {
 
 	SceCtrlData Pad;
+	_sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG); // без этого в кастоме нет отслеживания аналога
+	_sceCtrlSetSamplingCycle(0);
 	while(1)
 	{
-		prxCtrlReadBufferPositive(&Pad, 1);
+		//prxCtrlReadBufferPositive(&Pad, 1);
+		_sceCtrlReadBufferPositive(&Pad, 1);
 		PrintScreen(Pad);
 		PrintScreen_Pad(Pad);
 		//printf("0x%8X\n", Pad.Buttons);
 
 		if ((Pad.Buttons & PSP_CTRL_LTRIGGER) && (Pad.Buttons & PSP_CTRL_RTRIGGER) && (Pad.Buttons & PSP_CTRL_START))
 			break;
-		k_tbl->KernelDelayThread(.15 * 1000*1000); // 0.15
+		k_tbl->KernelDelayThread(.15 * 1000 * 1000); // 0.15
 	}
+
+	k_tbl->KernelDelayThread(.75 * 1000 * 1000); // 0.85
+	return 0;
 
 }
 
@@ -452,12 +454,13 @@ int kmain() {
 	pspXploitScanKernelFunctions(k_tbl);
 
 
-	_sceCtrlReadBufferPositive = pspXploitFindFunction("sceController_Service", "sceCtrl", 0x1F803938); 
+	_sceCtrlReadBufferPositive = (void*)pspXploitFindFunction("sceController_Service", "sceCtrl", 0x1F803938); 
 	if(!_sceCtrlReadBufferPositive)
 		printf("ERR: can't find _sceCtrlReadBufferPositive\n");
-	_sceCtrlSetSamplingCycle = pspXploitFindFunction("sceController_Service", "sceCtrl", 0x6A2774F3);
-	_sceCtrlSetSamplingMode = pspXploitFindFunction("sceController_Service", "sceCtrl", 0x1F4011E6);
+	_sceCtrlSetSamplingCycle = (void*)pspXploitFindFunction("sceController_Service", "sceCtrl", 0x6A2774F3);
+	_sceCtrlSetSamplingMode = (void*)pspXploitFindFunction("sceController_Service", "sceCtrl", 0x1F4011E6);
 
+	k_tbl->KernelDelayThread(.85 * 1000 * 1000); // 0.15
 
 
 	SceUID kthreadID = k_tbl->KernelCreateThread("keystester_thread", (void*)KERNELIFY(&kthread), 1, 0x20000, PSP_THREAD_ATTR_VFPU, NULL);
@@ -469,6 +472,7 @@ int kmain() {
 	pspXploitSetUserLevel(ul);
 	pspSdkSetK1(k1);
 
+	return 0;
 }
 
 int main(int argc, char*argv[])
@@ -487,9 +491,9 @@ int main(int argc, char*argv[])
 	pspDebugScreenSetTextColor(COLOR_GREY);
 	pspDebugScreenSetBackColor(COLOR_BLACK);
 	if (lang == 8)
-		printfc(15, "Key[s]Tester V5 от Yoti & Krazynez");
+		printfc(15, "Key[s]Tester V5.1 от Yoti & Krazynez");
 	else
-		printfc(15, "Key[s]Tester V5 by Yoti and Krazynez");
+		printfc(10, "Key[s]Tester V5.1 by Yoti and Krazynez");
 	if (lang == 8)
 		printfc(17, "L + R + START = выход");
 	else
@@ -504,13 +508,11 @@ int main(int argc, char*argv[])
 			printfc(16, "= custom mode =");
 	}
 
-	sceCtrlSetSamplingCycle(0);
-	sceCtrlSetSamplingMode(PSP_CTRL_MODE_ANALOG);
 	int ret = pspXploitInitKernelExploit();
 	if(ret == 0) {
 		ret = pspXploitDoKernelExploit();
 		if(ret == 0)
-			pspXploitExecuteKernel(kmain);
+			pspXploitExecuteKernel((u32)kmain);
 	}
 	
 

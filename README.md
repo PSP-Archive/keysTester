@@ -5,6 +5,12 @@
 
 
 
+## Known Bugs
+* Sometimes the PSP will just freeze up, nothing to worry though. You can run it again and should be fine.
+I seem to have gotten this down to happen more rarely but can still occationally occur. 
+
+
+
 ## Credits
 Yoti - Original Creator of this.
 
