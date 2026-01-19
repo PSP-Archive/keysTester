@@ -16,6 +16,6 @@ Yoti - Original Creator of this.
 
 Acid_Snake - LibPSPExploit
 
-Davee - Signing tool to sign the EBOOT
+Davee - Signing tool to sign the EBOOT ( pre-5.1 )
 
 _Special Thanks to the beer that provided this release_
